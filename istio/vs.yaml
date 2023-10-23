@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: server-vs
+spec:
+  hosts:
+    - server.istio.svc.cluster.local
+#  gateways:
+#  - myresponser-gateway
+  http:
+  - retries: {}
+    route:
+    - destination:
+        host: server.istio.svc.cluster.local
+

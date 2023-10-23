@@ -1,0 +1,24 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: server-dr
+spec:
+  host: server.istio.svc.cluster.local
+  trafficPolicy:
+    loadBalancer:
+      simple: LEAST_CONN
+    connectionPool:
+      tcp:
+        maxConnections: 200000
+        connectTimeout: 600s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+          probes: 10
+      http:
+        maxRequestsPerConnection: 400000
+        http1MaxPendingRequests: 500
+        maxRetries: 1
+        idleTimeout: 3600s
+        http2MaxRequests: 1000000
+        h2UpgradePolicy: DEFAULT

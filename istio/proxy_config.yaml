@@ -1,0 +1,7 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: concurrency
+  namespace: istio-system
+spec:
+  concurrency: 32
