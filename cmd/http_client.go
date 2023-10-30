@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	//h2Transport, err := http2.ConfigureTransports(&http.Transport{
+	//	IdleConnTimeout: time.Minute,
+	//})
 	client := &http.Client{
 		Transport: &http2.Transport{
 			AllowHTTP: true,
@@ -21,6 +24,14 @@ func main() {
 				//set connection timeout as 2 seconds
 				return net.DialTimeout(network, addr, time.Second*time.Duration(2))
 			},
+			//DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			//	// 使用自定义 Dialer
+			//	conn, err := tls.DialWithDialer(dialer, network, addr, cfg)
+			//	if err != nil {
+			//		return nil, err
+			//	}
+			//	return conn, nil
+			//},
 			//DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
 			//	return net.Dial(network, addr)
 			//},
@@ -33,7 +44,7 @@ func main() {
 	}
 	time.Sleep(time.Second * 3)
 	fmt.Println("lhb local ip:", getLAddrIP())
-	ch := make(chan struct{}, 10)
+	ch := make(chan struct{}, 1000)
 	for {
 		ch <- struct{}{}
 		start := time.Now()
@@ -54,7 +65,6 @@ func main() {
 		}
 
 		fmt.Println("Response Body:", string(buf[:n]))
-		time.Sleep(time.Second * 1)
 		<-ch
 	}
 }

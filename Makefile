@@ -98,17 +98,44 @@ reset:
 	kubectl delete -f istio/web-ui.yaml
 	kubectl delete -f istio/gateway.yaml
 
-.PHONY: docker-http-server
-docker-http-server:
+.PHONY: http-server
+http-server:
 	docker build -f docker/http_server.Dockerfile -t http-server:latest .
 
-.PHONY: docker-http-client
-docker-http-client:
-	docker build -f docker/client.Dockerfile -t http-client:latest .
+.PHONY: http-client
+http-client:
+	docker build -f docker/http_client.Dockerfile -t http-client:latest .
 
-.PHONY: apply-http_server
-apply-http_server:
-	k apply -f istio/http_server.yaml
+.PHONY: apply-http-server
+apply-http-server:
+	kubectl apply -f istio/http_server.yaml -n istio
+.PHONY: delete-http-server
+delete-http-server:
+	kubectl delete -f istio/http_server.yaml -n istio
 .PHONY: apply-http-client
 apply-http-client:
-	k apply -f istio/http_client.yaml
+	kubectl apply -f istio/http_client.yaml -n istio
+.PHONY: delete-http-client
+delete-http-client:
+	kubectl delete -f istio/http_client.yaml -n istio
+
+.PHONY: grpc-server
+grpc-server:
+	docker build -f docker/server.Dockerfile -t grpc-server:latest .
+
+.PHONY: grpc-client
+grpc-client:
+	docker build -f docker/client.Dockerfile -t grpc-client:latest .
+
+.PHONY: apply-grpc-server
+apply-grpc-server:
+	kubectl apply -f istio/server.yaml -n istio
+.PHONY: apply-grpc-client
+apply-grpc-client:
+	kubectl apply -f istio/client.yaml -n istio
+.PHONY: delete-grpc-server
+delete-grpc-server:
+	kubectl delete -f istio/server.yaml -n istio
+.PHONY: apply-grpc-client
+delete-grpc-client:
+	kubectl delete -f istio/client.yaml -n istio

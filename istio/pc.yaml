@@ -1,0 +1,39 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: grpc-server
+spec:
+  selector:
+    matchLabels:
+      app: server
+  concurrency: 2
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: grpc-client
+spec:
+  selector:
+    matchLabels:
+      app: client
+  concurrency: 2
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: http-server
+spec:
+  selector:
+    matchLabels:
+      app: http-server
+  concurrency: 100
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ProxyConfig
+metadata:
+  name: http-client
+spec:
+  selector:
+    matchLabels:
+      app: http-client
+  concurrency: 100

@@ -5,6 +5,8 @@ package main
 
 import (
 	"context"
+	"github.com/shimingyah/pool"
+	"google.golang.org/grpc/keepalive"
 	"log"
 	"net"
 
@@ -30,7 +32,19 @@ func main() {
 	}
 	log.Printf("Listening on %s", lis.Addr())
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.InitialWindowSize(pool.InitialWindowSize),
+		grpc.InitialConnWindowSize(pool.InitialConnWindowSize),
+		grpc.MaxSendMsgSize(pool.MaxSendMsgSize),
+		grpc.MaxRecvMsgSize(pool.MaxRecvMsgSize),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			PermitWithoutStream: true,
+		}),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    pool.KeepAliveTime,
+			Timeout: pool.KeepAliveTimeout,
+		}),
+	)
 	proto.RegisterEmojiServiceServer(s, &server{})
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
