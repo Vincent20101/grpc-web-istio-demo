@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisinsight
+  namespace: default
+  labels:
+    app: redisinsight
+spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: redisinsight
+    template:
+      metadata:
+        labels:
+          app: redisinsight
+      spec:
+        containers:
+          - name:  redisinsight
+            image: redislabs/redisinsight:latest
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              runAsUser: 0
+            ports:
+              - containerPort: 8001
+                protocol: TCP

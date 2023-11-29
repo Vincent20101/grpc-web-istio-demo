@@ -35,6 +35,8 @@ spec:
       - name: server
         image: grpc-server:latest
         imagePullPolicy: Never
+        command: [ "sh", "-c" ]
+        args: [ "/bin/server -tls -cert=/etc/secrets/certs/tls.crt -key=/etc/secrets/certs/tls.key" ]
         ports:
         - containerPort: 9000
         resources:
@@ -44,3 +46,10 @@ spec:
           requests:
             cpu: "100m"
             memory: 1Gi
+        volumeMounts:
+          - mountPath: /etc/secrets/certs
+            name: certs
+      volumes:
+        - name: certs
+          secret:
+            secretName: tls-secret

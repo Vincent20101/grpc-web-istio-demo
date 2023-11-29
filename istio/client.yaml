@@ -21,10 +21,19 @@ spec:
       - name: client
         image: grpc-client:latest
         imagePullPolicy: Never
+        command: [ "sh", "-c" ]
+        args: [ "/bin/client -tls" ]
         resources:
           limits:
             cpu: "2"
-            memory: 1Gi
+            memory: 3Gi
           requests:
             cpu: "2"
             memory: 1Gi
+        volumeMounts:
+          - mountPath: /etc/secrets/certs
+            name: certs
+      volumes:
+        - name: certs
+          secret:
+            secretName: tls-secret

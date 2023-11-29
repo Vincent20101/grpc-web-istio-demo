@@ -5,7 +5,10 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"github.com/shimingyah/pool"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"log"
 	"net"
@@ -16,6 +19,10 @@ import (
 	emoji "gopkg.in/kyokomi/emoji.v1"
 )
 
+var certFile = flag.String("cert", "/etc/secrets/certs/tls.crt", "public key ")
+var keyFile = flag.String("key", "/etc/secrets/certs/tls.key", "private key")
+var serverTLS = flag.Bool("tls", false, "grpc with tls certificate")
+
 type server struct{}
 
 func (s *server) InsertEmojis(ctx context.Context, req *proto.EmojiRequest) (*proto.EmojiResponse, error) {
@@ -25,6 +32,10 @@ func (s *server) InsertEmojis(ctx context.Context, req *proto.EmojiRequest) (*pr
 	return &proto.EmojiResponse{OutputText: outputText}, nil
 }
 
+func init() {
+	flag.Parse()
+}
+
 func main() {
 	lis, err := net.Listen("tcp", ":9000")
 	if err != nil {
@@ -32,7 +43,7 @@ func main() {
 	}
 	log.Printf("Listening on %s", lis.Addr())
 
-	s := grpc.NewServer(
+	opts := []grpc.ServerOption{
 		grpc.InitialWindowSize(pool.InitialWindowSize),
 		grpc.InitialConnWindowSize(pool.InitialConnWindowSize),
 		grpc.MaxSendMsgSize(pool.MaxSendMsgSize),
@@ -44,7 +55,16 @@ func main() {
 			Time:    pool.KeepAliveTime,
 			Timeout: pool.KeepAliveTimeout,
 		}),
-	)
+	}
+	if *serverTLS {
+		fmt.Println("start grpc server with tls configuration")
+		tls, err := credentials.NewServerTLSFromFile(*certFile, *keyFile)
+		if nil != err {
+			fmt.Printf("failed to create TLS: %v\n", err)
+		}
+		opts = append(opts, grpc.Creds(tls))
+	}
+	s := grpc.NewServer(opts...)
 	proto.RegisterEmojiServiceServer(s, &server{})
 	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
