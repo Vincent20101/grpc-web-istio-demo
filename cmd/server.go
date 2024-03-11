@@ -12,8 +12,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"log"
 	"net"
+	"runtime"
 
 	"github.com/venilnoronha/grpc-web-istio-demo/proto"
+	_ "go.uber.org/automaxprocs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	emoji "gopkg.in/kyokomi/emoji.v1"
@@ -41,7 +43,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
-	log.Printf("Listening on %s", lis.Addr())
+	log.Printf("Listening on %s\n", lis.Addr())
+	log.Printf("lhb runtime.GOMAXPROCS(0): %v\n", runtime.GOMAXPROCS(-1))
+	log.Printf("runtime.GOMAXPROCS(0): %v\n", runtime.GOMAXPROCS(0))
+	log.Printf("runtime.NumCPU(): %v\n", runtime.NumCPU())
+	log.Printf("runtime.Version(): %v\n", runtime.Version())
 
 	opts := []grpc.ServerOption{
 		grpc.InitialWindowSize(pool.InitialWindowSize),

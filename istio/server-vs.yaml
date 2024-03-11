@@ -1,0 +1,65 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: server-vs
+  namespace: istio
+spec:
+  hosts:
+    - server
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - server
+      route:
+        - destination:
+            host: server
+            port:
+              number: 9000
+  tcp:
+    - match:
+        - port: 9000
+      route:
+        - destination:
+            host: server
+            port:
+              number: 9000
+#  http:
+#    - match:
+#        - uri:
+#            prefix: "/"
+#      route:
+#        - destination:
+#            host: server.istio.svc.cluster.local
+#            port:
+#              number: 9000
+---
+#apiVersion: security.istio.io/v1beta1
+#kind: PeerAuthentication
+#metadata:
+#  name: server-pa
+#  namespace: istio
+#spec:
+#  selector:
+#    matchLabels:
+#      app: server
+#  mtls:
+#    mode: STRICT
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: server-dr
+  namespace: istio
+spec:
+#  exportTo:
+#    - istio
+  host: server
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 9000
+        tls:
+          mode: SIMPLE
+          sni: server
+

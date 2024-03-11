@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/golang/protobuf v1.3.1
 	github.com/shimingyah/pool v1.0.0
+	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/net v0.10.0
 	google.golang.org/grpc v1.22.0
 	gopkg.in/kyokomi/emoji.v1 v1.5.1

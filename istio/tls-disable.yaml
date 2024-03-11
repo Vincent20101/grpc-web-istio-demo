@@ -1,0 +1,28 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: default
+spec:
+  mtls:
+    mode: DISABLE
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: istio
+  namespace: istio
+spec:
+  mtls:
+    mode: DISABLE
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: server
+spec:
+  host: server
+  trafficPolicy:
+    tls:
+      mode: DISABLE

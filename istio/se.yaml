@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: sink-se
+  namespace: tjb
+spec:
+  hosts:
+    - sink-anpd.tjb-platform
+  location: MESH_INTERNAL
+  ports:
+    - name: grpc
+      number: 50051
+      protocol: grpc
+      targetPort: 50051
+  resolution: STATIC
+  endpoints:
+    - address: 179.20.119.2

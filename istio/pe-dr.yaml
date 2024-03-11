@@ -1,0 +1,13 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: server
+  namespace: istio
+spec:
+  host: server
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+      caCertificates: /etc/secrets/certs/ca.crt
+---
+

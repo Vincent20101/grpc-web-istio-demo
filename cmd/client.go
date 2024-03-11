@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-var svc = flag.String("server", "server:9000", "The server's address")
+var svc = flag.String("server", "172.29.13.181:50051", "The server's address")
 var text = flag.String("text", "Hello world!", "The input text")
 var clientTLS = flag.Bool("tls", false, "grpc with tls certificate")
 
