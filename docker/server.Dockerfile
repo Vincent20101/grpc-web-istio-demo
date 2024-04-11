@@ -1,4 +1,4 @@
-FROM golang as builder
+FROM golang:1.20.6 as builder
 MAINTAINER Venil Noronha <veniln@vmware.com>
 
 WORKDIR /root/go/src/github.com/venilnoronha/grpc-web-istio-demo/
