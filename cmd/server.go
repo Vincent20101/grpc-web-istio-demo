@@ -5,14 +5,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"log"
 	"math"
 	"net"
 	"os"
 	"runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 
 	"github.com/shimingyah/pool"
@@ -25,8 +31,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	emoji "gopkg.in/kyokomi/emoji.v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/api/core/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -110,62 +116,157 @@ func main() {
 }
 
 func getClientForPod() {
-	//var kubeconfig *string
-	//if home := homedir.HomeDir(); home != "" {
-	//	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	//} else {
-	//	kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	scheme := k8sruntime.NewScheme()
+	err := corev1.AddToScheme(scheme)
+	if err != nil {
+		fmt.Println("lhb:", err)
+	}
+
+	//cfg, err := config.GetConfig()
+	//if err != nil {
+	//	fmt.Fprintf(os.Stderr, "Failed to get Kubernetes client config: %v\n", err)
+	//	os.Exit(1)
 	//}
 	//
-	//config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	//// 创建客户端
+	//k8sClient, err := rest.RESTClientFor(cfg)
 	//if err != nil {
-	//	config, err = rest.InClusterConfig()
-	//	if err != nil {
-	//		fmt.Fprintf(os.Stderr, "Error building kubeconfig: %s\n", err.Error())
-	//		os.Exit(1)
-	//	}
-	//}
-	//
-	//clientSet, err := kubernetes.NewForConfig(config)
-	//if err != nil {
-	//	panic(err.Error())
-	//}
-
-	//config, err := config.GetConfig()
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		fmt.Println(err, "Error getting config. Failed to start LoadMonitor")
-		return
-	}
-
-	clientSet, err := kubernetes.NewForConfig(config)
-	if err != nil {
-
-		fmt.Println(err, "Error kubernetes.NewForConfig(). Failed to start LoadMonitor")
-		return
-	}
-
-	metricsClient, err := versioned.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-	//podName := os.Getenv("HOSTNAME") // 在 Kubernetes 中，Pod 名称通常设置为 HOSTNAME 环境变量
-	podName, _ := os.Hostname()
-	//namespace := os.Getenv("NAMESPACE")
-
-	//if podName == "" || namespace == "" {
-	//	fmt.Println("Unable to determine Pod name and namespace.")
+	//	fmt.Fprintf(os.Stderr, "Failed to create Kubernetes client: %v\n", err)
 	//	os.Exit(1)
 	//}
 
+	k8sClient, err := client.New(ctrl.GetConfigOrDie(), client.Options{Scheme: scheme})
+	if err != nil {
+		fmt.Printf("Failed to create a k8s controller client, %v\n", err)
+		return
+	}
+
+	namespace, _ := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	podName, _ := os.Hostname()
+	fmt.Println("namespace:", string(namespace))
+	fmt.Println("podName", podName)
+
+	//gvk := schema.GroupVersionKind{
+	//	Group:   "",
+	//	Version: "v1",
+	//	Kind:    "Pod",
+	//}
+	//
+	////gvk.Kind = gvk.Kind + "List"
+	//objList := unstructured.UnstructuredList{}
+	//objList.SetGroupVersionKind(gvk)
+	//ctx := context.Background()
+	//for {
+	//	err = k8sClient.List(ctx, &objList, client.InNamespace(namespace))
+	//	if err != nil {
+	//		fmt.Fprintf(os.Stderr, "Failed to get Pod %s in namespace %s: %v\n", podName, string(namespace), err)
+	//      continue
+	//	}
+	//	if k8sClient == nil {
+	//		break
+	//	}
+	//	fmt.Println(objList.GetKind())
+	//}
+
+	//podKey := client.ObjectKey{
+	//	Name:      podName,
+	//	Namespace: string(namespace),
+	//}
+	//
+	//// 创建 Pod 对象
+	//pod := &corev1.Pod{}
+	//
+	//// 从 Kubernetes 客户端获取 Pod 对象
+	//for {
+	//	err = k8sClient.Get(context.Background(), podKey, pod)
+	//	if err != nil {
+	//		fmt.Fprintf(os.Stderr, "Failed to get Pod %s in namespace %s: %v\n", podName, string(namespace), err)
+	//      continue
+	//	}
+	//
+	//	// 打印 Pod 中每个容器的资源限制信息
+	//	for _, container := range pod.Spec.Containers {
+	//		fmt.Printf("Container: %s\n", container.Name)
+	//		fmt.Printf("Memory Limit: %s\n", container.Resources.Limits.Memory().String())
+	//		fmt.Printf("CPU Limit: %s\n", container.Resources.Limits.Cpu().String())
+	//	}
+	//	time.Sleep(10 * time.Second)
+	//	if k8sClient == nil {
+	//		break
+	//	}
+	//}
+
+	nsName := types.NamespacedName{
+		Name:      podName,
+		Namespace: string(namespace),
+	}
+	obj := unstructured.Unstructured{}
+	obj.GetObjectKind().SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "",
+		Version: "v1",
+		Kind:    "Pod",
+	})
 	for {
-		pod, err := clientSet.CoreV1().Pods("istio").Get(context.Background(), podName, metav1.GetOptions{})
+
+		err = k8sClient.Get(context.Background(), nsName, &obj)
 		if err != nil {
-			fmt.Printf("Error listing pods: %s\n", err.Error())
-			time.Sleep(5 * time.Second)
+			fmt.Printf("Failed to list trace session list, %v\n", err)
+			time.Sleep(10 * time.Second)
 			continue
 		}
+		sliceInterface, b, err := unstructured.NestedSlice(obj.Object, "spec", "containers")
+		fmt.Println(sliceInterface, b, err)
+		data, _ := json.Marshal(sliceInterface)
+		var c []corev1.Container
+		if err = json.Unmarshal(data, &c); err != nil {
+			fmt.Println("Failed to unmarshal container", err)
+			time.Sleep(10 * time.Second)
+		}
+		for k, v := range c {
+			fmt.Println(k, v.Name, v.Resources.Limits.Memory().Value())
+		}
+		time.Sleep(10 * time.Second)
 
+		if k8sClient == nil {
+			break
+		}
+	}
+
+	//config, err := config.GetConfig()
+	//config, err := rest.InClusterConfig()
+	//if err != nil {
+	//	fmt.Println(err, "Error getting config. Failed to start LoadMonitor")
+	//	return
+	//}
+
+	//clientSet, err := kubernetes.NewForConfig(config)
+	//if err != nil {
+	//
+	//	fmt.Println(err, "Error kubernetes.NewForConfig(). Failed to start LoadMonitor")
+	//	return
+	//}
+	//
+	metricsClient, err := versioned.NewForConfig(ctrl.GetConfigOrDie())
+	//if err != nil {
+	//	panic(err.Error())
+	//}
+	////podName := os.Getenv("HOSTNAME") // 在 Kubernetes 中，Pod 名称通常设置为 HOSTNAME 环境变量
+	//podName, _ := os.Hostname()
+	////namespace := os.Getenv("NAMESPACE")
+	//
+	////if podName == "" || namespace == "" {
+	////	fmt.Println("Unable to determine Pod name and namespace.")
+	////	os.Exit(1)
+	////}
+	//
+	for {
+		//	pod, err := clientSet.CoreV1().Pods("istio").Get(context.Background(), podName, metav1.GetOptions{})
+		//	if err != nil {
+		//		fmt.Printf("Error listing pods: %s\n", err.Error())
+		//		time.Sleep(5 * time.Second)
+		//		continue
+		//	}
+		//
 		metrics, err := metricsClient.MetricsV1beta1().PodMetricses("istio").Get(context.Background(), podName, metav1.GetOptions{})
 		if err != nil {
 			time.Sleep(5 * time.Second)
@@ -175,28 +276,117 @@ func getClientForPod() {
 
 		for _, container := range metrics.Containers {
 			fmt.Println("container name: ", container.Name)
-			fmt.Println("container name: ", spew.Sdump(container))
+			//		fmt.Println("container name: ", spew.Sdump(container))
 			if container.Name == "server" {
 				memoryUsageBytes := container.Usage["memory"]
-				limitMemoryBytes := pod.Spec.Containers[0].Resources.Limits.Memory().Value()
-				requestedMemoryBytes := pod.Spec.Containers[0].Resources.Requests.Memory().Value()
-				memoryUsagePercentage := float64(memoryUsageBytes.Value()) / float64(requestedMemoryBytes) * 100
-				fmt.Printf("pod %s limit memory %v, requested memory %v\n", pod.Name, limitMemoryBytes/1024/1024, requestedMemoryBytes/1024/1024)
-				fmt.Printf("pod %s usage memory %v\n", pod.Name, memoryUsageBytes.Value()/1024/1024)
-				fmt.Printf("Pod %s memory usage: %.2f%%\n", pod.Name, memoryUsagePercentage)
-
-				if memoryUsagePercentage > 80 {
-					fmt.Printf("Pod %s memory usage is above 80%%!\n", pod.Name)
-					// 这里可以添加相应的处理逻辑，比如发送警报或者调整资源配置等
-				}
+				// limitMemoryBytes := pod.Spec.Containers[0].Resources.Limits.Memory().Value()
+				// requestedMemoryBytes := pod.Spec.Containers[0].Resources.Requests.Memory().Value()
+				// memoryUsagePercentage := float64(memoryUsageBytes.Value()) / float64(requestedMemoryBytes) * 100
+				// fmt.Printf("pod %s limit memory %v, requested memory %v\n", pod.Name, limitMemoryBytes/1024/1024, requestedMemoryBytes/1024/1024)
+				// fmt.Printf("pod %s usage memory %v\n", pod.Name, memoryUsageBytes.Value()/1024/1024)
+				// fmt.Printf("Pod %s memory usage: %.2f%%\n", pod.Name, memoryUsagePercentage)
+				fmt.Printf("memory usage: %d\n", memoryUsageBytes.Value())
+				//
+				// if memoryUsagePercentage > 80 {
+				// 	fmt.Printf("Pod %s memory usage is above 80%%!\n", pod.Name)
+				// 	// 这里可以添加相应的处理逻辑，比如发送警报或者调整资源配置等
+				// }
 			}
-
 		}
 
 		time.Sleep(10 * time.Second) // 每30秒检查一次
 	}
 
 }
+
+//func getClientForPod() {
+//	//var kubeconfig *string
+//	//if home := homedir.HomeDir(); home != "" {
+//	//	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+//	//} else {
+//	//	kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+//	//}
+//	//
+//	//config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+//	//if err != nil {
+//	//	config, err = rest.InClusterConfig()
+//	//	if err != nil {
+//	//		fmt.Fprintf(os.Stderr, "Error building kubeconfig: %s\n", err.Error())
+//	//		os.Exit(1)
+//	//	}
+//	//}
+//	//
+//	//clientSet, err := kubernetes.NewForConfig(config)
+//	//if err != nil {
+//	//	panic(err.Error())
+//	//}
+//
+//	//config, err := config.GetConfig()
+//	config, err := rest.InClusterConfig()
+//	if err != nil {
+//		fmt.Println(err, "Error getting config. Failed to start LoadMonitor")
+//		return
+//	}
+//
+//	clientSet, err := kubernetes.NewForConfig(config)
+//	if err != nil {
+//
+//		fmt.Println(err, "Error kubernetes.NewForConfig(). Failed to start LoadMonitor")
+//		return
+//	}
+//
+//	metricsClient, err := versioned.NewForConfig(config)
+//	if err != nil {
+//		panic(err.Error())
+//	}
+//	//podName := os.Getenv("HOSTNAME") // 在 Kubernetes 中，Pod 名称通常设置为 HOSTNAME 环境变量
+//	podName, _ := os.Hostname()
+//	//namespace := os.Getenv("NAMESPACE")
+//
+//	//if podName == "" || namespace == "" {
+//	//	fmt.Println("Unable to determine Pod name and namespace.")
+//	//	os.Exit(1)
+//	//}
+//
+//	for {
+//		pod, err := clientSet.CoreV1().Pods("istio").Get(context.Background(), podName, metav1.GetOptions{})
+//		if err != nil {
+//			fmt.Printf("Error listing pods: %s\n", err.Error())
+//			time.Sleep(5 * time.Second)
+//			continue
+//		}
+//
+//		metrics, err := metricsClient.MetricsV1beta1().PodMetricses("istio").Get(context.Background(), podName, metav1.GetOptions{})
+//		if err != nil {
+//			time.Sleep(5 * time.Second)
+//			fmt.Printf("Error getting metrics for pod %s: %s\n", podName, err.Error())
+//			continue
+//		}
+//
+//		for _, container := range metrics.Containers {
+//			fmt.Println("container name: ", container.Name)
+//			fmt.Println("container name: ", spew.Sdump(container))
+//			if container.Name == "server" {
+//				memoryUsageBytes := container.Usage["memory"]
+//				limitMemoryBytes := pod.Spec.Containers[0].Resources.Limits.Memory().Value()
+//				requestedMemoryBytes := pod.Spec.Containers[0].Resources.Requests.Memory().Value()
+//				memoryUsagePercentage := float64(memoryUsageBytes.Value()) / float64(requestedMemoryBytes) * 100
+//				fmt.Printf("pod %s limit memory %v, requested memory %v\n", pod.Name, limitMemoryBytes/1024/1024, requestedMemoryBytes/1024/1024)
+//				fmt.Printf("pod %s usage memory %v\n", pod.Name, memoryUsageBytes.Value()/1024/1024)
+//				fmt.Printf("Pod %s memory usage: %.2f%%\n", pod.Name, memoryUsagePercentage)
+//
+//				if memoryUsagePercentage > 80 {
+//					fmt.Printf("Pod %s memory usage is above 80%%!\n", pod.Name)
+//					// 这里可以添加相应的处理逻辑，比如发送警报或者调整资源配置等
+//				}
+//			}
+//
+//		}
+//
+//		time.Sleep(10 * time.Second) // 每30秒检查一次
+//	}
+//
+//}
 
 //func getClient() {
 //	var kubeconfig *string
