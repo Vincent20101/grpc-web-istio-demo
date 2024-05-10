@@ -1,7 +1,7 @@
 openssl genrsa -out ca.key 2048
 openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=GZ/O=Casa/CN=casa.app" -out ca.crt
 openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=GZ/O=Casa/CN=casa.app" -out server.csr
-openssl x509 -req -extfile <(printf "subjectAltName=IP:0.0.0.0,IP:127.0.0.1,IP:24.12.0.25,DNS.1:server.default,DNS.2:server,DNS.3:server.istio,DNS.4:sink,DNS.5:smf1-smftester,DNS.6:sink-anpd,DNS.7:sink-anpd.anpd,DNS.8:sink-anpd.anpd.svc.cluster.local") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+openssl x509 -req -extfile <(printf "subjectAltName=IP:11.67.130.10,IP:127.0.0.1,IP:24.12.0.25,DNS.1:server.default,DNS.2:server,DNS.3:server.istio,DNS.4:sink,DNS.5:smf1-smftester,DNS.6:sink-anpd,DNS.7:sink-anpd.anpd,DNS.8:sink-anpd.anpd.svc.cluster.local") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
 openssl x509 -req -extfile <(printf "subjectAltName=IP:0.0.0.0,DNS.1:server.default,DNS.2:server,DNS.3:server.istio") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
